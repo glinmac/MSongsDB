@@ -38,8 +38,8 @@ from hdf5_getters import *
 try:
     from MBrainzDB import query as QUERYMB
 except ImportError:
-    print 'need pg module and MBrainzDB folder of Python source code if you'
-    print 'want to use musicbrainz related functions, e.g. fill_hdf5_from_musicbrainz'
+    print('need pg module and MBrainzDB folder of Python source code if you')
+    print('want to use musicbrainz related functions, e.g. fill_hdf5_from_musicbrainz')
 
 
 # description of the different arrays in the song file
@@ -83,11 +83,11 @@ def fill_hdf5_from_artist(h5,artist):
     # fill the metadata arrays
     group = h5.root.metadata
     metadata.cols.idx_similar_artists[0] = 0
-    group.similar_artists.append( np.array(map(lambda x : x.id,artist.get_similar(results=100)),dtype='string') )
+    group.similar_artists.append( np.array([x.id for x in artist.get_similar(results=100)],dtype='string') )
     metadata.cols.idx_artist_terms[0] = 0
-    group.artist_terms.append( np.array(map(lambda x : x.name,artist.get_terms()),dtype='string') )
-    group.artist_terms_freq.append( np.array(map(lambda x : x.frequency,artist.get_terms()),dtype='float64') )
-    group.artist_terms_weight.append( np.array(map(lambda x : x.weight,artist.get_terms()),dtype='float64') )
+    group.artist_terms.append( np.array([x.name for x in artist.get_terms()],dtype='string') )
+    group.artist_terms_freq.append( np.array([x.frequency for x in artist.get_terms()],dtype='float64') )
+    group.artist_terms_weight.append( np.array([x.weight for x in artist.get_terms()],dtype='float64') )
     # done, flush
     metadata.flush()
     
@@ -126,9 +126,9 @@ def fill_hdf5_from_track(h5,track):
     # get the metadata table, fill it
     metadata = h5.root.metadata.songs
     #metadata.cols.analyzer_version[0] = track.analyzer_version
-    metadata.cols.artist_name[0] = getattr(track, 'artist', u'').encode('utf-8')
-    metadata.cols.release[0] = getattr(track, 'release', u'').encode('utf-8')
-    metadata.cols.title[0] = getattr(track, 'title', u'').encode('utf-8')
+    metadata.cols.artist_name[0] = getattr(track, 'artist', '').encode('utf-8')
+    metadata.cols.release[0] = getattr(track, 'release', '').encode('utf-8')
+    metadata.cols.title[0] = getattr(track, 'title', '').encode('utf-8')
     idsplitter_7digital = lambda x: int(x.split(':')[2]) if x and x.split(':')[0]=='7digital' else -1
     metadata.cols.release_7digitalid[0] = idsplitter_7digital(track.foreign_release_id)
     metadata.cols.track_7digitalid[0] = idsplitter_7digital(track.foreign_id)
@@ -153,39 +153,39 @@ def fill_hdf5_from_track(h5,track):
     group = h5.root.analysis
     # analysis arrays (segments)
     analysis.cols.idx_segments_start[0] = 0
-    group.segments_start.append( np.array(map(lambda x : x['start'],track.segments),dtype='float64') )
+    group.segments_start.append( np.array([x['start'] for x in track.segments],dtype='float64') )
     analysis.cols.idx_segments_confidence[0] = 0
-    group.segments_confidence.append( np.array(map(lambda x : x['confidence'],track.segments),dtype='float64') )
+    group.segments_confidence.append( np.array([x['confidence'] for x in track.segments],dtype='float64') )
     analysis.cols.idx_segments_pitches[0] = 0
-    group.segments_pitches.append( np.array(map(lambda x : x['pitches'],track.segments),dtype='float64') )
+    group.segments_pitches.append( np.array([x['pitches'] for x in track.segments],dtype='float64') )
     analysis.cols.idx_segments_timbre[0] = 0
-    group.segments_timbre.append( np.array(map(lambda x : x['timbre'],track.segments),dtype='float64') )
+    group.segments_timbre.append( np.array([x['timbre'] for x in track.segments],dtype='float64') )
     analysis.cols.idx_segments_loudness_max[0] = 0
-    group.segments_loudness_max.append( np.array(map(lambda x : x['loudness_max'],track.segments),dtype='float64') )
+    group.segments_loudness_max.append( np.array([x['loudness_max'] for x in track.segments],dtype='float64') )
     analysis.cols.idx_segments_loudness_max_time[0] = 0
-    group.segments_loudness_max_time.append( np.array(map(lambda x : x['loudness_max_time'],track.segments),dtype='float64') )
+    group.segments_loudness_max_time.append( np.array([x['loudness_max_time'] for x in track.segments],dtype='float64') )
     analysis.cols.idx_segments_loudness_start[0] = 0
-    group.segments_loudness_start.append( np.array(map(lambda x : x['loudness_start'],track.segments),dtype='float64') )
+    group.segments_loudness_start.append( np.array([x['loudness_start'] for x in track.segments],dtype='float64') )
     # analysis arrays (sections)
     analysis.cols.idx_sections_start[0] = 0
-    group.sections_start.append( np.array(map(lambda x : x['start'],track.sections),dtype='float64') )
+    group.sections_start.append( np.array([x['start'] for x in track.sections],dtype='float64') )
     analysis.cols.idx_sections_confidence[0] = 0
-    group.sections_confidence.append( np.array(map(lambda x : x['confidence'],track.sections),dtype='float64') )
+    group.sections_confidence.append( np.array([x['confidence'] for x in track.sections],dtype='float64') )
     # analysis arrays (beats
     analysis.cols.idx_beats_start[0] = 0
-    group.beats_start.append( np.array(map(lambda x : x['start'],track.beats),dtype='float64') )
+    group.beats_start.append( np.array([x['start'] for x in track.beats],dtype='float64') )
     analysis.cols.idx_beats_confidence[0] = 0
-    group.beats_confidence.append( np.array(map(lambda x : x['confidence'],track.beats),dtype='float64') )
+    group.beats_confidence.append( np.array([x['confidence'] for x in track.beats],dtype='float64') )
     # analysis arrays (bars)
     analysis.cols.idx_bars_start[0] = 0
-    group.bars_start.append( np.array(map(lambda x : x['start'],track.bars),dtype='float64') )
+    group.bars_start.append( np.array([x['start'] for x in track.bars],dtype='float64') )
     analysis.cols.idx_bars_confidence[0] = 0
-    group.bars_confidence.append( np.array(map(lambda x : x['confidence'],track.bars),dtype='float64') )
+    group.bars_confidence.append( np.array([x['confidence'] for x in track.bars],dtype='float64') )
     # analysis arrays (tatums)
     analysis.cols.idx_tatums_start[0] = 0
-    group.tatums_start.append( np.array(map(lambda x : x['start'],track.tatums),dtype='float64') )
+    group.tatums_start.append( np.array([x['start'] for x in track.tatums],dtype='float64') )
     analysis.cols.idx_tatums_confidence[0] = 0
-    group.tatums_confidence.append( np.array(map(lambda x : x['confidence'],track.tatums),dtype='float64') )
+    group.tatums_confidence.append( np.array([x['confidence'] for x in track.tatums],dtype='float64') )
     analysis.flush()
     # DONE
 
@@ -236,7 +236,7 @@ def fill_hdf5_aggregate_file(h5,h5_filenames,summaryfile=False):
         # get number of songs in new file
         nSongs = get_num_songs(h5tocopy)
         # iterate over songs in one HDF5 (1 if regular file, more if aggregate file)
-        for songidx in xrange(nSongs):
+        for songidx in range(nSongs):
             # METADATA
             row = h5.root.metadata.songs.row
             row["artist_familiarity"] = get_artist_familiarity(h5tocopy,songidx)
@@ -534,11 +534,11 @@ def open_h5_file_append(h5filename):
 
 def die_with_usage():
     """ HELP MENU """
-    print 'hdf5_utils.py'
-    print 'by T. Bertin-Mahieux (2010) Columbia University'
-    print ''
-    print 'should be used as a library, contains functions to create'
-    print 'HDF5 files for the Million Song Dataset project'
+    print('hdf5_utils.py')
+    print('by T. Bertin-Mahieux (2010) Columbia University')
+    print('')
+    print('should be used as a library, contains functions to create')
+    print('HDF5 files for the Million Song Dataset project')
     sys.exit(0)
 
 

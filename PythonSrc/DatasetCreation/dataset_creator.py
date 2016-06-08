@@ -31,9 +31,9 @@ import sys
 import glob
 import copy
 import time
-from Queue import Queue   # from 'queue' in python 3.0
+from queue import Queue   # from 'queue' in python 3.0
 import shutil
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import multiprocessing
 import numpy.random as npr
 try:
@@ -97,14 +97,14 @@ class my_trackset():
             if self.ar[k] == objh:
                 self.ar[k] = 0
                 return
-        print 'ERROR: my_trackset, tried to remove inexisting element, obj=',obj,'and hash=',objh
+        print('ERROR: my_trackset, tried to remove inexisting element, obj=',obj,'and hash=',objh)
     def add(self,obj):
         objh = hash(obj)
         for k in range(len(self.ar)):
             if self.ar[k] == 0:
                 self.ar[k] = objh
                 return
-        print 'ERROR: shared memory trackset full!!! fake a keyboardinterrupt to stop'
+        print('ERROR: shared memory trackset full!!! fake a keyboardinterrupt to stop')
         raise KeyboardInterrupt
     def __contains__(self,obj):
         return hash(obj) in self.ar
@@ -142,11 +142,11 @@ def get_lock_track(trackid):
     """
     got_lock = TRACKSET_LOCK.acquire() # blocking by default
     if not got_lock:
-        print 'ERROR: could not get TRACKSET_LOCK locked?'
+        print('ERROR: could not get TRACKSET_LOCK locked?')
         return False
     if TRACKSET_CLOSED:
         TRACKSET_LOCK.release()
-        print 'RELEASED LOCK BECAUSE TRACKSET_CLOSED'
+        print('RELEASED LOCK BECAUSE TRACKSET_CLOSED')
         return False
     if trackid in TRACKSET:
         TRACKSET_LOCK.release()
@@ -163,15 +163,15 @@ def release_lock_track(trackid):
     """
     got_lock = TRACKSET_LOCK.acquire() # blocking by default
     if not got_lock:
-        print 'ERROR: could not get TRACKSET_LOCK lock?'
+        print('ERROR: could not get TRACKSET_LOCK lock?')
         return False
     if TRACKSET_CLOSED:
         TRACKSET_LOCK.release()
-        print 'RELEASED LOCK BECAUSE TRACKSET_CLOSED, track=',trackid
+        print('RELEASED LOCK BECAUSE TRACKSET_CLOSED, track=',trackid)
         return False
     if not trackid in TRACKSET:
         TRACKSET_LOCK.release()
-        print 'WARNING: releasing a song you dont own, trackid=',trackid;sys.stdout.flush()
+        print('WARNING: releasing a song you dont own, trackid=',trackid);sys.stdout.flush()
         return False
     TRACKSET.remove(trackid)
     TRACKSET_LOCK.release()
@@ -202,8 +202,8 @@ def count_h5_files(basedir):
             files = glob.glob(os.path.join(root,'*.h5'))
             cnt += len(files)
         return cnt
-    except (IOError,OSError),e:
-        print 'ERROR:',e,'in count_h5_files, return 0'
+    except (IOError,OSError) as e:
+        print('ERROR:',e,'in count_h5_files, return 0')
         return 0
 
 def create_track_file(maindir,trackid,track,song,artist,mbconnect=None):
@@ -266,7 +266,7 @@ def create_track_file(maindir,trackid,track,song,artist,mbconnect=None):
                 # close hdf5
                 try:
                     h5.close()
-                except NameError,ValueError:
+                except NameError as ValueError:
                     pass
                 # delete path
                 try:
@@ -274,15 +274,15 @@ def create_track_file(maindir,trackid,track,song,artist,mbconnect=None):
                 except IOError:
                     pass
                 # print and wait
-                print 'ERROR creating track:',trackid,'on',time.ctime(),'(pid='+str(os.getpid())+')'
-                print e
+                print('ERROR creating track:',trackid,'on',time.ctime(),'(pid='+str(os.getpid())+')')
+                print(e)
                 if try_cnt < 100:
-                    print '(try again in',SLEEPTIME,'seconds)'
+                    print('(try again in',SLEEPTIME,'seconds)')
                     time.sleep(SLEEPTIME)
                     continue
                 # give up
                 else:
-                    print 'we give up after',try_cnt,'tries'
+                    print('we give up after',try_cnt,'tries')
                     release_lock_track(trackid)
                     return False
             # move tmp file to real file
@@ -295,7 +295,7 @@ def create_track_file(maindir,trackid,track,song,artist,mbconnect=None):
         # close hdf5
         try:
             h5.close()
-        except NameError,ValueError:
+        except NameError as ValueError:
             pass
         # delete path
         try:
@@ -306,8 +306,8 @@ def create_track_file(maindir,trackid,track,song,artist,mbconnect=None):
         except IOError:
             pass
         raise
-    except (IOError,OSError),e:
-        print 'GOT Error',e,'deep deep in creation process, threading problem?'
+    except (IOError,OSError) as e:
+        print('GOT Error',e,'deep deep in creation process, threading problem?')
         raise
     # IF WE GET HERE WE'RE GOOD
     return True
@@ -349,18 +349,18 @@ def create_track_file_from_trackid(maindir,trackid,song,artist,mbconnect=None):
         except KeyboardInterrupt:
             close_creation()
             raise
-        except urllib2.HTTPError,e:
-            print type(e),':',e
-            print 'we dont retry for that error, trackid=',trackid,'(pid='+str(os.getpid())+')'
+        except urllib.error.HTTPError as e:
+            print(type(e),':',e)
+            print('we dont retry for that error, trackid=',trackid,'(pid='+str(os.getpid())+')')
             return False
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in create_track_file_from_trackid, tid=',trackid,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in create_track_file_from_trackid, tid=',trackid,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')')
             if try_cnt < 50:
                 time.sleep(SLEEPTIME)
                 continue
             else:
-                print 'we give up after',try_cnt,'tries.'
+                print('we give up after',try_cnt,'tries.')
                 return False
     # we have everything, launch create track file
     res = create_track_file(maindir,trackid,track,song,artist,mbconnect=mbconnect)
@@ -392,17 +392,17 @@ def create_track_file_from_song(maindir,song,artist,mbconnect=None):
             tracks = song.get_tracks(CATALOG)
             trackid = tracks[0]['id']
             break
-        except (IndexError, TypeError),e:
+        except (IndexError, TypeError) as e:
             return False # should not happen according to EN guys, but still does...
-        except TypeError,e:
-            print 'ERROR:',e,' something happened that should not, song.id =',song.id,'(pid='+str(os.getpid())+')'
+        except TypeError as e:
+            print('ERROR:',e,' something happened that should not, song.id =',song.id,'(pid='+str(os.getpid())+')')
             return False # should not happen according to EN guys, but still does...
         except KeyboardInterrupt:
             close_creation()
             raise
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in create_track_file_from_song, sid=',song.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in create_track_file_from_song, sid=',song.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')')
             time.sleep(SLEEPTIME)
             continue
     # we got the track id, call for its creation
@@ -436,13 +436,13 @@ def create_track_file_from_song_noartist(maindir,song,mbconnect=None):
         except KeyboardInterrupt:
             close_creation()
             raise
-        except pyechonest.util.EchoNestAPIError,e:
-            print 'MAJOR ERROR, wrong artist id?'
-            print e # means the ID does not exist
+        except pyechonest.util.EchoNestAPIError as e:
+            print('MAJOR ERROR, wrong artist id?')
+            print(e) # means the ID does not exist
             return False
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in create_track_files_from_song_noartist, sid=',song.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in create_track_files_from_song_noartist, sid=',song.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')')
             time.sleep(SLEEPTIME)
             continue
     # get his songs, creates his song files, return number of actual files created
@@ -482,23 +482,23 @@ def create_track_files_from_artist(maindir,artist,mbconnect=None,maxsongs=100):
             allsongs.extend(songs)
             if len(allsongs) >= maxsongs or len(songs) < n_askfor:
                 break
-            print 'WARNING tracks from artists, we cant search for more than 100 songs for the moment (pid='+str(os.getpid())+')'
+            print('WARNING tracks from artists, we cant search for more than 100 songs for the moment (pid='+str(os.getpid())+')')
             break # we have not implemented the start yet
         except KeyboardInterrupt:
             close_creation()
             raise
-        except pyechonest.util.EchoNestAPIError,e:
+        except pyechonest.util.EchoNestAPIError as e:
             if str(e)[:21] == 'Echo Nest API Error 5': # big hack, wrong artist ID
-                print 'SKIPPING ARTIST',artist.id,'FOR NONEXISTENCE'
+                print('SKIPPING ARTIST',artist.id,'FOR NONEXISTENCE')
                 return 0
             else:
-                print type(e),':',e
-                print 'at time',time.ctime(),'in create_track_file_from_artist, aid=',artist.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')'
+                print(type(e),':',e)
+                print('at time',time.ctime(),'in create_track_file_from_artist, aid=',artist.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')')
                 time.sleep(SLEEPTIME)
                 continue
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in create_track_files_from_artist, aid=',artist.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in create_track_files_from_artist, aid=',artist.id,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')')
             time.sleep(SLEEPTIME)
             continue
     # shuffle the songs, to help multithreading
@@ -541,13 +541,13 @@ def create_track_files_from_artistid(maindir,artistid,mbconnect=None,maxsongs=10
         except KeyboardInterrupt:
             close_creation()
             raise
-        except pyechonest.util.EchoNestAPIError,e:
-            print 'MAJOR ERROR, wrong artist id?',artistid
-            print e # means the ID does not exist
+        except pyechonest.util.EchoNestAPIError as e:
+            print('MAJOR ERROR, wrong artist id?',artistid)
+            print(e) # means the ID does not exist
             return 0
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in create_track_files_from_artistid, aid=',artistid,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in create_track_files_from_artistid, aid=',artistid,'(we wait',SLEEPTIME,'seconds) (pid='+str(os.getpid())+')')
             time.sleep(SLEEPTIME)
             continue
 
@@ -570,26 +570,26 @@ def get_top_terms(nresults=1000):
     # get terms
     while True:
         try:
-            f = urllib2.urlopen(url,timeout=60.)
+            f = urllib.request.urlopen(url,timeout=60.)
             response = eval( f.readline() )
             if response['response']['status']['message'] != 'Success':
-                print 'EN response failure at time',time.ctime(),'in get_top_terms (we wait',SLEEPTIME,'seconds)'
+                print('EN response failure at time',time.ctime(),'in get_top_terms (we wait',SLEEPTIME,'seconds)')
                 time.sleep(SLEEPTIME)
                 continue
             break
         except (KeyboardInterrupt,NameError):
             close_creation()
             raise
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in get_top_terms (we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in get_top_terms (we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
     # parse, return
     term_pairs = response['response']['terms']
-    terms = map(lambda x: x['name'],term_pairs)
+    terms = [x['name'] for x in term_pairs]
     if len(terms) != nresults:
-        print 'WARNING: asked for',nresults,'top terms from EN, got',len(terms)
+        print('WARNING: asked for',nresults,'top terms from EN, got',len(terms))
     return terms
 
 
@@ -611,9 +611,9 @@ def get_most_familiar_artists(nresults=100):
         except KeyboardInterrupt:
             close_creation()
             raise
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in get_most_familiar_artists (we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in get_most_familiar_artists (we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
     # done
@@ -637,9 +637,9 @@ def search_songs(**args):
         except (KeyboardInterrupt,NameError):
             close_creation()
             raise
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in search songs [params='+str(args)+'] (we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in search songs [params='+str(args)+'] (we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
     # done
@@ -661,9 +661,9 @@ def get_artists_from_description(description,nresults=100):
         except (KeyboardInterrupt,NameError):
             close_creation()
             raise
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in get_artistids_from_description (we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in get_artistids_from_description (we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
     # done
@@ -681,18 +681,18 @@ def get_similar_artists(artist):
         except (KeyboardInterrupt,NameError):
             close_creation()
             raise
-        except pyechonest.util.EchoNestAPIError,e:
+        except pyechonest.util.EchoNestAPIError as e:
             if str(e)[:21] == 'Echo Nest API Error 5': # big hack, wrong artist ID
-                print 'SKIPPING ARTIST',artist.id,'FOR NONEXISTENCE'
+                print('SKIPPING ARTIST',artist.id,'FOR NONEXISTENCE')
                 return []
             else:
-                print type(e),':',e
-                print 'at time',time.ctime(),'in get_similar_artists from aid =',artist.id,'(we wait',SLEEPTIME,'seconds)'
+                print(type(e),':',e)
+                print('at time',time.ctime(),'in get_similar_artists from aid =',artist.id,'(we wait',SLEEPTIME,'seconds)')
                 time.sleep(SLEEPTIME)
                 continue
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in get_similar_artists from aid =',artist.id,'(we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in get_similar_artists from aid =',artist.id,'(we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
     # done
@@ -718,14 +718,14 @@ def get_artist_song_from_names(artistname,songtitle):
         except (KeyboardInterrupt,NameError,TypeError):
             close_creation()
             raise
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in get_artist_song_from_names (we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in get_artist_song_from_names (we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
     # sanity checks
     if len(songs) == 0:
-        print 'no song found for:',artistname,'(',songtitle,')'
+        print('no song found for:',artistname,'(',songtitle,')')
         return None,None
     if CREATION_CLOSED:
         return None, None
@@ -738,13 +738,13 @@ def get_artist_song_from_names(artistname,songtitle):
         except KeyboardInterrupt:
             close_creation()
             raise
-        except pyechonest.util.EchoNestAPIError,e:
-            print 'MAJOR ERROR, wrong artist id?',song.artist_id
-            print e # means the ID does not exist
+        except pyechonest.util.EchoNestAPIError as e:
+            print('MAJOR ERROR, wrong artist id?',song.artist_id)
+            print(e) # means the ID does not exist
             return None,None
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in get_artist_song_from_names, aid=',song.artist_id,'(we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in get_artist_song_from_names, aid=',song.artist_id,'(we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
     # done
@@ -775,14 +775,14 @@ def create_step10(maindir,mbconnect=None,maxsongs=500,nfilesbuffer=0,verbose=0):
         # CLOSED CREATION?
         if CREATION_CLOSED:
             break
-        if verbose>0: print 'doing artist:',artist; sys.stdout.flush()
+        if verbose>0: print('doing artist:',artist); sys.stdout.flush()
         cnt_created += create_track_files_from_artist(maindir,artist,
                                                       mbconnect=mbconnect,
                                                       maxsongs=maxsongs)
         t1 = time.time()
         nh5 = count_h5_files(maindir)
         t2 = time.time()
-        print 'found',nh5,'h5 song files in',maindir,'in',int(t2-t1),'seconds (pid='+str(os.getpid())+')'; sys.stdout.flush()
+        print('found',nh5,'h5 song files in',maindir,'in',int(t2-t1),'seconds (pid='+str(os.getpid())+')'); sys.stdout.flush()
         # sanity stop
         if nh5 > TOTALNFILES - nfilesbuffer:
             return cnt_created
@@ -809,7 +809,7 @@ def create_step20(maindir,mbconnect=None,maxsongs=500,nfilesbuffer=0,verbose=0):
     most_used_terms = get_top_terms(nresults=1000)
     most_used_terms = most_used_terms[:200]
     npr.shuffle(most_used_terms)
-    if verbose>0: print 'most used terms retrievend, got',len(most_used_terms)
+    if verbose>0: print('most used terms retrievend, got',len(most_used_terms))
     # keep in mind artist ids we have done already
     done_artists = set()
     # for each term, find all artists then create all songs
@@ -820,7 +820,7 @@ def create_step20(maindir,mbconnect=None,maxsongs=500,nfilesbuffer=0,verbose=0):
         if CREATION_CLOSED:
             return cnt_created
         # verbose
-        print 'doing term',termid,'out of',len(most_used_terms),'(pid='+str(os.getpid())+')'; sys.stdout.flush()
+        print('doing term',termid,'out of',len(most_used_terms),'(pid='+str(os.getpid())+')'); sys.stdout.flush()
         # get all artists from that term as a description
         artists = get_artists_from_description(term,nresults=100)
         npr.shuffle(artists)
@@ -833,13 +833,13 @@ def create_step20(maindir,mbconnect=None,maxsongs=500,nfilesbuffer=0,verbose=0):
                 continue
             done_artists.add(artist.id)
             # create all his tracks
-            if verbose>0: print 'doing artist:',artist.name,'(term =',term,')'
+            if verbose>0: print('doing artist:',artist.name,'(term =',term,')')
             cnt_created += create_track_files_from_artist(maindir,artist,
                                                           mbconnect=mbconnect,
                                                           maxsongs=maxsongs)
             # sanity stop
             nh5 = count_h5_files(maindir)
-            print 'found',nh5,'h5 song files in',maindir,'(pid='+str(os.getpid())+')'; sys.stdout.flush()
+            print('found',nh5,'h5 song files in',maindir,'(pid='+str(os.getpid())+')'); sys.stdout.flush()
             if nh5 > TOTALNFILES - nfilesbuffer:
                 return cnt_created
     # done
@@ -867,7 +867,7 @@ def create_step30(maindir,mbconnect=None,maxsongs=500,nfilesbuffer=0):
     # get the txt file, get the lines
     while True:
         try:
-            f = urllib2.urlopen(CAL500)
+            f = urllib.request.urlopen(CAL500)
             lines = f.readlines()
             f.close()
             lines[499] # sanity check, get IndexError if something's wrong
@@ -875,17 +875,17 @@ def create_step30(maindir,mbconnect=None,maxsongs=500,nfilesbuffer=0):
         except KeyboardInterrupt:
             close_creation()
             raise
-        except IndexError, e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in step20 retrieving CAL500 - response too short! (we wait',SLEEPTIME,'seconds)'
+        except IndexError as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in step20 retrieving CAL500 - response too short! (we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
-        except Exception,e:
-            print type(e),':',e
-            print 'at time',time.ctime(),'in step20 retrieving CAL500 (we wait',SLEEPTIME,'seconds)'
+        except Exception as e:
+            print(type(e),':',e)
+            print('at time',time.ctime(),'in step20 retrieving CAL500 (we wait',SLEEPTIME,'seconds)')
             time.sleep(SLEEPTIME)
             continue
-    lines = map(lambda x:x.strip(),lines)
+    lines = [x.strip() for x in lines]
     npr.shuffle(lines)
     # get song specifically, then all songs for the artist
     cnt_created = 0
@@ -894,11 +894,11 @@ def create_step30(maindir,mbconnect=None,maxsongs=500,nfilesbuffer=0):
             return cnt_created
         # sanity stop
         nh5 = count_h5_files(maindir)
-        print 'found',nh5,'h5 song files in',maindir; sys.stdout.flush()
+        print('found',nh5,'h5 song files in',maindir); sys.stdout.flush()
         if nh5 > TOTALNFILES - nfilesbuffer:
             return cnt_created
         # verbose
-        print 'doing line',lineid,'out of',len(lines),'(pid='+str(os.getpid())+')'; sys.stdout.flush()
+        print('doing line',lineid,'out of',len(lines),'(pid='+str(os.getpid())+')'); sys.stdout.flush()
         # parse line
         artiststr = line.split('<SEP>')[0]
         songstr = line.split('<SEP>')[1]
@@ -955,11 +955,11 @@ def create_step40(maindir,mbconnect=None,maxsongs=100,nfilesbuffer=0):
         if CREATION_CLOSED:
             return cnt_created
         nh5 = count_h5_files(maindir)
-        print 'found',nh5,'h5 song files in',maindir; sys.stdout.flush()
+        print('found',nh5,'h5 song files in',maindir); sys.stdout.flush()
         if nh5 > TOTALNFILES - nfilesbuffer:
             return cnt_created
         # verbose
-        print 'doing search args',argsid,'out of',len(all_args),'(pid='+str(os.getpid())+')'; sys.stdout.flush()
+        print('doing search args',argsid,'out of',len(all_args),'(pid='+str(os.getpid())+')'); sys.stdout.flush()
         # songs
         songs = search_songs(**args)
         if len(songs) == 0:
@@ -1005,11 +1005,11 @@ def create_step60(maindir,mbconnect=None,maxsongs=100,nfilesbuffer=0):
             break
         if cnt_artists % 10 == 0:
             nh5 = count_h5_files(maindir)
-            print 'found',nh5,'h5 song files in',maindir; sys.stdout.flush()
+            print('found',nh5,'h5 song files in',maindir); sys.stdout.flush()
             if nh5 > TOTALNFILES - nfilesbuffer:
                 return cnt_created
         # verbose
-        print 'doing artist',cnt_artists,'(pid='+str(os.getpid())+')'; sys.stdout.flush()
+        print('doing artist',cnt_artists,'(pid='+str(os.getpid())+')'); sys.stdout.flush()
         # encode that artist unless it was done in step10
         #if cnt_artists > n_most_familiars:
         # we had to relaunch this function, lets not redo all the same artists over and over
@@ -1049,7 +1049,7 @@ def run_steps(maindir,nomb=False,nfilesbuffer=0,startstep=0,onlystep=-1,idxthrea
        nomb          - if True, don't use musicbrainz
        nfilesbuffer  -
     """
-    print 'run_steps is launched on dir:',maindir
+    print('run_steps is launched on dir:',maindir)
     # sanity check
     assert os.path.isdir(maindir),'maindir: '+str(maindir)+' does not exist'
     # check onlystep and startstep
@@ -1094,29 +1094,29 @@ def run_steps(maindir,nomb=False,nfilesbuffer=0,startstep=0,onlystep=-1,idxthrea
         # done, close pg connection
         if not connect is None:
             connect.close()
-        print 'run_steps terminating, at least',cnt_created,'files created'
+        print('run_steps terminating, at least',cnt_created,'files created')
 
 
 
 
 def die_with_usage():
     """ HELP MENU """
-    print 'dataset_creator.py'
-    print '    by T. Bertin-Mahieux (2010) Columbia University'
-    print '       tb2332@columbia.edu'
-    print 'Download data from the EchoNest to create the MillionSongDataset'
-    print 'usage:'
-    print '   python dataset_creator.py [FLAGS] <maindir>'
-    print 'FLAGS'
-    print '  -nthreads n      - number of threads to use'
-    print '  -nomb            - do not use musicbrainz'
-    print '  -nfilesbuffer n  - each thread stop if there is less than that many files'
-    print '                     left to be put in the Million Song dataset'
-    print '  -t1nobuffer      - removes the filesbuffer for first thread'
-    print '  -startstep n     - start at step >= n'
-    print '  -onlystep n      - only do step n'
-    print 'INPUT'
-    print '   maindir  - main directory of the Million Song Dataset'
+    print('dataset_creator.py')
+    print('    by T. Bertin-Mahieux (2010) Columbia University')
+    print('       tb2332@columbia.edu')
+    print('Download data from the EchoNest to create the MillionSongDataset')
+    print('usage:')
+    print('   python dataset_creator.py [FLAGS] <maindir>')
+    print('FLAGS')
+    print('  -nthreads n      - number of threads to use')
+    print('  -nomb            - do not use musicbrainz')
+    print('  -nfilesbuffer n  - each thread stop if there is less than that many files')
+    print('                     left to be put in the Million Song dataset')
+    print('  -t1nobuffer      - removes the filesbuffer for first thread')
+    print('  -startstep n     - start at step >= n')
+    print('  -onlystep n      - only do step n')
+    print('INPUT')
+    print('   maindir  - main directory of the Million Song Dataset')
     sys.exit(0)
 
 
@@ -1168,7 +1168,7 @@ if __name__ == '__main__':
 
 
     # verbose
-    print 'PARAMS:',params
+    print('PARAMS:',params)
 
     # LAUNCH THREADS
     params_list = []
@@ -1189,13 +1189,13 @@ if __name__ == '__main__':
         pool.close()
         pool.join()
     except KeyboardInterrupt:
-        print 'MULTIPROCESSING'
-        print 'stopping multiprocessing due to a keyboard interrupt'
+        print('MULTIPROCESSING')
+        print('stopping multiprocessing due to a keyboard interrupt')
         pool.terminate()
         pool.join()
-    except Exception, e:
-        print 'MULTIPROCESSING'
-        print 'got exception: %r, terminating the pool' % (e,)
+    except Exception as e:
+        print('MULTIPROCESSING')
+        print('got exception: %r, terminating the pool' % (e,))
         pool.terminate()
         pool.join()
 
